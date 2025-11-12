@@ -1,23 +1,183 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="utf-8">
-<title>Video 3GP 176x144</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tải Video</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 10px;
+        background: #f5f5f5;
+    }
+    .container {
+        max-width: 100%;
+        margin: 0 auto;
+        background: white;
+        padding: 15px;
+        border-radius: 5px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    h2 {
+        text-align: center;
+        margin: 10px 0;
+        color: #333;
+        font-size: 20px;
+    }
+    .search-box {
+        text-align: center;
+        margin: 15px 0;
+    }
+    input[type="text"] {
+        width: 90%;
+        max-width: 400px;
+        padding: 10px;
+        font-size: 16px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        margin-bottom: 10px;
+    }
+    input[type="submit"], input[type="button"], button {
+        padding: 10px 15px;
+        font-size: 14px;
+        border: none;
+        border-radius: 4px;
+        background: #007bff;
+        color: white;
+        cursor: pointer;
+        margin: 5px;
+    }
+    input[type="button"] {
+        background: #6c757d;
+    }
+    button {
+        background: #28a745;
+    }
+    .video-item {
+        border: 1px solid #ddd;
+        padding: 12px;
+        margin: 8px 0;
+        border-radius: 4px;
+        background: #f9f9f9;
+        word-break: break-word;
+    }
+    .video-name {
+        font-weight: bold;
+        font-size: 16px;
+        margin-bottom: 5px;
+        color: #333;
+    }
+    .video-size {
+        color: #666;
+        font-size: 14px;
+        margin-bottom: 8px;
+    }
+    hr {
+        border: none;
+        border-top: 1px solid #ddd;
+        margin: 15px 0;
+    }
+    small {
+        color: #888;
+        font-size: 12px;
+    }
+    @media (max-width: 480px) {
+        .container {
+            padding: 10px;
+        }
+        h2 {
+            font-size: 18px;
+        }
+        input[type="text"] {
+            width: 95%;
+            font-size: 14px;
+        }
+        .video-item {
+            padding: 10px;
+            margin: 6px 0;
+        }
+        .video-name {
+            font-size: 14px;
+        }
+    }
+</style>
 </head>
-<body bgcolor="black" text="white">
-<center>
-<h3>🎬 Video 3GP 176x144</h3>
+<body>
+<div class="container">
+    <h2>TAI VIDEO XUONG</h2>
 
-<video src="videos/sample1.3gp" controls width="176" height="144"></video><br>
-<a href="videos/video1.3gp">Tải về sample1.3gp</a><br><br>
+    <!-- Ô tìm kiếm -->
+    <div class="search-box">
+        <form method="GET">
+            <input type="text" name="search" placeholder="Tim video..." value="<?php echo htmlspecialchars($_GET['search'] ?? ''); ?>">
+            <br>
+            <input type="submit" value="Tim kiem">
+            <input type="button" value="Tat ca" onclick="location.href='?'">
+        </form>
+    </div>
 
-<video src="videos/sample2.3gp" controls width="176" height="144"></video><br>
-<a href="videos/video2.3gp">Tải về sample2.3gp</a>
+    <hr>
 
-</center>
-</body>
-</html>
-    © 2025 - Web tải video 3GP by Nam 😎
-  </p>
+    <?php
+    // Hàm lấy danh sách video
+    function getVideos() {
+        $videos = [];
+        $videoDir = 'videos/';
+        
+        if (is_dir($videoDir)) {
+            $files = scandir($videoDir);
+            foreach ($files as $file) {
+                if ($file != '.' && $file != '..') {
+                    $ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
+                    if (in_array($ext, ['mp4', 'avi', 'mkv', 'mov', '3gp', 'flv'])) {
+                        $filePath = $videoDir . $file;
+                        $size = filesize($filePath);
+                        $sizeText = round($size / (1024 * 1024), 1) . ' MB';
+                        
+                        $videos[] = [
+                            'name' => $file,
+                            'file' => $file,
+                            'size' => $sizeText
+                        ];
+                    }
+                }
+            }
+        }
+        return $videos;
+    }
+
+    // Lấy danh sách video
+    $allVideos = getVideos();
+    $search = $_GET['search'] ?? '';
+
+    // Lọc video nếu có tìm kiếm
+    if ($search) {
+        $filteredVideos = array_filter($allVideos, function($video) use ($search) {
+            return stripos($video['name'], $search) !== false;
+        });
+    } else {
+        $filteredVideos = $allVideos;
+    }
+
+    // Hiển thị kết quả
+    echo '<h3>Danh sach video (' . count($filteredVideos) . '/' . count($allVideos) . '):</h3>';
+
+    if (empty($filteredVideos)) {
+        echo '<p>Khong tim thay video nao</p>';
+    } else {
+        foreach ($filteredVideos as $video) {
+            echo '<div class="video-item">';
+            echo '<div class="video-name">' . htmlspecialchars($video['name']) . '</div>';
+            echo '<div class="video-size">Kich thuoc: ' . $video['size'] . '</div>';
+            echo '<a href="videos/' . urlencode($video['file']) . '" download><button>Tai xuong</button></a>';
+            echo '</div>';
+        }
+    }
+    ?>
+
+    <hr>
+    <p><small>Termux - Tu dong load video</small></p>
+</div>
 </body>
 </html>
