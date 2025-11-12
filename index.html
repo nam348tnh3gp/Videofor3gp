@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Tai Video</title>
+<style>
+body {
+    font-family: Arial;
+    margin: 5px;
+    background: white;
+}
+h2 {
+    text-align: center;
+    margin: 10px 0;
+    color: black;
+}
+input[type="text"] {
+    width: 90%;
+    padding: 5px;
+    font-size: 14px;
+    border: 1px solid gray;
+}
+input[type="button"], button {
+    padding: 6px 10px;
+    font-size: 12px;
+    border: 1px solid gray;
+    background: #e0e0e0;
+    margin: 2px;
+}
+.video-item {
+    border: 1px solid gray;
+    padding: 8px;
+    margin: 5px 0;
+    background: #f0f0f0;
+}
+.video-name {
+    font-weight: bold;
+    margin-bottom: 3px;
+}
+.video-size {
+    color: #666;
+    margin-bottom: 5px;
+}
+hr {
+    border: 0;
+    border-top: 1px solid gray;
+    margin: 10px 0;
+}
+.loading {
+    text-align: center;
+    color: #666;
+    font-style: italic;
+}
+.error {
+    text-align: center;
+    color: red;
+    font-weight: bold;
+}
+</style>
+</head>
+<body>
+
+<h2>TAI VIDEO XUONG</h2>
+
+<center>
+<input type="text" id="searchInput" placeholder="Tim video..." size="30">
+<br><br>
+<input type="button" value="Tim kiem" onclick="searchVideos()">
+<input type="button" value="Tat ca" onclick="loadVideos()">
+</center>
+
+<hr>
+
+<div id="videoList">
+    <div class="loading">Dang tai danh sach video...</div>
+</div>
+
+<hr>
+<center><small>GitHub Pages - Tu dong load video</small></center>
+
+<script>
+// Biến lưu danh sách video
+var allVideos = [];
+
+// Hàm load video từ GitHub
+async function loadVideos() {
+    document.getElementById('videoList').innerHTML = '<div class="loading">Dang tai danh sach video...</div>';
+    
+    try {
+        // Lấy tên repo từ URL hiện tại
+        const pathParts = window.location.pathname.split('/').filter(part => part);
+        let repoPath = '';
+        
+        if (pathParts.length >= 2) {
+            // URL dạng: /username/reponame/
+            repoPath = pathParts[0] + '/' + pathParts[1];
+        } else if (pathParts.length === 1) {
+            // URL dạng: /reponame/ (user site)
+            repoPath = pathParts[0];
+        } else {
+            throw new Error('Khong the xac dinh repository');
+        }
+        
+        const apiUrl = `https://api.github.com/repos/${repoPath}/contents/videos`;
+        console.log('API URL:', apiUrl);
+        
+        const response = await fetch(apiUrl);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const files = await response.json();
+        
+        allVideos = [];
+        
+        // Lọc file video
+        if (Array.isArray(files)) {
+            files.forEach(file => {
+                if (file.type === 'file') {
+                    const ext = file.name.split('.').pop().toLowerCase();
+                    const videoExts = ['mp4', 'avi', 'mkv', 'mov', '3gp', 'flv', 'webm'];
+                    
+                    if (videoExts.includes(ext)) {
+                        const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
+                        allVideos.push({
+                            name: file.name,
+                            file: file.name,
+                            size: sizeMB + ' MB',
+                            download_url: file.download_url
+                        });
+                    }
+                }
+            });
+        }
+        
+        if (allVideos.length === 0) {
+            document.getElementById('videoList').innerHTML = 
+                '<div class="error">Khong co video nao trong thu muc "videos"</div>';
+            return;
+        }
+        
+        displayVideos(allVideos);
+        
+    } catch (error) {
+        console.error('Loi khi tai video:', error);
+        let errorMessage = 'Loi khi tai danh sach video. ';
+        
+        if (error.message.includes('404')) {
+            errorMessage += 'Khong tim thay repository hoac thu muc videos.';
+        } else if (error.message.includes('403')) {
+            errorMessage += 'Bi chan truy cap. Thu lai sau.';
+        } else {
+            errorMessage += error.message;
+        }
+        
+        document.getElementById('videoList').innerHTML = 
+            '<div class="error">' + errorMessage + '</div>';
+    }
+}
+
+// Hiển thị danh sách video
+function displayVideos(videos) {
+    var html = '<center><h3>Danh sach video (' + videos.length + '):</h3></center>';
+    
+    videos.forEach(video => {
+        html += '<div class="video-item">';
+        html += '<div class="video-name">' + video.name + '</div>';
+        html += '<div class="video-size">Kich thuoc: ' + video.size + '</div>';
+        html += '<center><a href="' + video.download_url + '" download><button>Tai xuong</button></a></center>';
+        html += '</div>';
+    });
+    
+    document.getElementById('videoList').innerHTML = html;
+}
+
+// Tìm kiếm video
+function searchVideos() {
+    if (allVideos.length === 0) {
+        document.getElementById('videoList').innerHTML = 
+            '<div class="error">Chua co danh sach video. Bam "Tat ca" de tai.</div>';
+        return;
+    }
+    
+    var searchText = document.getElementById('searchInput').value.toLowerCase();
+    
+    if (searchText === '') {
+        displayVideos(allVideos);
+        return;
+    }
+    
+    var filteredVideos = allVideos.filter(video => 
+        video.name.toLowerCase().includes(searchText)
+    );
+    
+    if (filteredVideos.length === 0) {
+        document.getElementById('videoList').innerHTML = '<center><p>Khong tim thay video nao</p></center>';
+        return;
+    }
+    
+    var html = '<center><h3>Ket qua tim kiem (' + filteredVideos.length + '):</h3></center>';
+    
+    filteredVideos.forEach(video => {
+        html += '<div class="video-item">';
+        html += '<div class="video-name">' + video.name + '</div>';
+        html += '<div class="video-size">Kich thuoc: ' + video.size + '</div>';
+        html += '<center><a href="' + video.download_url + '" download><button>Tai xuong</button></a></center>';
+        html += '</div>';
+    });
+    
+    document.getElementById('videoList').innerHTML = html;
+}
+
+// Cho phép tìm kiếm bằng phím Enter
+document.getElementById('searchInput').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        searchVideos();
+    }
+});
+
+// Tự động load video khi trang được mở
+window.onload = loadVideos;
+</script>
+</body>
+</html>
