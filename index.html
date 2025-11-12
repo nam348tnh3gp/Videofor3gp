@@ -2,40 +2,179 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tải Video</title>
+<title>Tai Video</title>
 <style>
-    body {
-        font-family: Arial, sans-serif;
-        margin: 0;
-        padding: 10px;
-        background: #f5f5f5;
+body {
+    font-family: Arial;
+    margin: 5px;
+    background: white;
+}
+h2 {
+    text-align: center;
+    margin: 10px 0;
+    color: black;
+}
+input[type="text"] {
+    width: 90%;
+    padding: 5px;
+    font-size: 14px;
+    border: 1px solid gray;
+}
+input[type="submit"], input[type="button"], button {
+    padding: 6px 10px;
+    font-size: 12px;
+    border: 1px solid gray;
+    background: #e0e0e0;
+    margin: 2px;
+}
+.video-item {
+    border: 1px solid gray;
+    padding: 8px;
+    margin: 5px 0;
+    background: #f0f0f0;
+}
+.video-name {
+    font-weight: bold;
+    margin-bottom: 3px;
+}
+.video-size {
+    color: #666;
+    margin-bottom: 5px;
+}
+hr {
+    border: 0;
+    border-top: 1px solid gray;
+    margin: 10px 0;
+}
+.loading {
+    text-align: center;
+    color: #666;
+    font-style: italic;
+}
+</style>
+</head>
+<body>
+
+<h2>TAI VIDEO XUONG</h2>
+
+<!-- Ô tìm kiếm -->
+<center>
+<input type="text" id="searchInput" placeholder="Tim video..." size="30">
+<br><br>
+<input type="button" value="Tim kiem" onclick="searchVideos()">
+<input type="button" value="Tat ca" onclick="loadVideos()">
+</center>
+
+<hr>
+
+<div id="videoList">
+    <div class="loading">Dang tai danh sach video...</div>
+</div>
+
+<hr>
+<center><small>GitHub Pages - Tu dong load video</small></center>
+
+<script>
+// Biến lưu danh sách video
+var allVideos = [];
+
+// Hàm load video từ GitHub
+async function loadVideos() {
+    document.getElementById('videoList').innerHTML = '<div class="loading">Dang tai danh sach video...</div>';
+    
+    try {
+        // Lấy tên repo từ URL hiện tại
+        const repoPath = window.location.pathname.split('/').slice(1, 3).join('/');
+        const apiUrl = `https://api.github.com/repos/${repoPath}/contents/videos`;
+        
+        const response = await fetch(apiUrl);
+        const files = await response.json();
+        
+        allVideos = [];
+        
+        // Lọc file video
+        files.forEach(file => {
+            if (file.type === 'file') {
+                const ext = file.name.split('.').pop().toLowerCase();
+                const videoExts = ['mp4', 'avi', 'mkv', 'mov', '3gp', 'flv', 'webm'];
+                
+                if (videoExts.includes(ext)) {
+                    const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
+                    allVideos.push({
+                        name: file.name,
+                        file: file.name,
+                        size: sizeMB + ' MB',
+                        download_url: file.download_url
+                    });
+                }
+            }
+        });
+        
+        displayVideos(allVideos);
+        
+    } catch (error) {
+        console.error('Loi khi tai video:', error);
+        document.getElementById('videoList').innerHTML = '<div class="loading">Loi khi tai danh sach video. Kiem tra console.</div>';
     }
-    .container {
-        max-width: 100%;
-        margin: 0 auto;
-        background: white;
-        padding: 15px;
-        border-radius: 5px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+// Hiển thị danh sách video
+function displayVideos(videos) {
+    if (videos.length === 0) {
+        document.getElementById('videoList').innerHTML = '<center><p>Khong co video nao trong thu muc</p></center>';
+        return;
     }
-    h2 {
-        text-align: center;
-        margin: 10px 0;
-        color: #333;
-        font-size: 20px;
+    
+    var html = '<center><h3>Danh sach video (' + videos.length + '):</h3></center>';
+    
+    videos.forEach(video => {
+        html += '<div class="video-item">';
+        html += '<div class="video-name">' + video.name + '</div>';
+        html += '<div class="video-size">Kich thuoc: ' + video.size + '</div>';
+        html += '<center><a href="' + video.download_url + '" download><button>Tai xuong</button></a></center>';
+        html += '</div>';
+    });
+    
+    document.getElementById('videoList').innerHTML = html;
+}
+
+// Tìm kiếm video
+function searchVideos() {
+    var searchText = document.getElementById('searchInput').value.toLowerCase();
+    
+    if (searchText === '') {
+        displayVideos(allVideos);
+        return;
     }
-    .search-box {
-        text-align: center;
-        margin: 15px 0;
+    
+    var filteredVideos = allVideos.filter(video => 
+        video.name.toLowerCase().includes(searchText)
+    );
+    
+    if (filteredVideos.length === 0) {
+        document.getElementById('videoList').innerHTML = '<center><p>Khong tim thay video nao</p></center>';
+        return;
     }
-    input[type="text"] {
-        width: 90%;
-        max-width: 400px;
-        padding: 10px;
-        font-size: 16px;
-        border: 1px solid #ddd;
-        border-radius: 4px;
+    
+    var html = '<center><h3>Ket qua tim kiem (' + filteredVideos.length + '):</h3></center>';
+    
+    filteredVideos.forEach(video => {
+        html += '<div class="video-item">';
+        html += '<div class="video-name">' + video.name + '</div>';
+        html += '<div class="video-size">Kich thuoc: ' + video.size + '</div>';
+        html += '<center><a href="' + video.download_url + '" download><button>Tai xuong</button></a></center>';
+        html += '</div>';
+    });
+    
+    document.getElementById('videoList').innerHTML = html;
+}
+
+// Tự động load video khi trang được mở
+window.onload = loadVideos;
+</script>
+
+</body>
+</html>        border-radius: 4px;
         margin-bottom: 10px;
     }
     input[type="submit"], input[type="button"], button {
