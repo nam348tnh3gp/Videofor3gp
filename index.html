@@ -2,72 +2,91 @@
 <html>
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Tai Video</title>
-<style>
+<style type="text/css">
 body {
-    font-family: Arial;
+    font-family: Arial, sans-serif;
     margin: 5px;
-    background: white;
+    background: #ffffff;
+    color: #000000;
 }
 h2 {
     text-align: center;
-    margin: 10px 0;
-    color: black;
+    margin: 8px 0;
+    font-size: 16px;
 }
-input[type="text"] {
+h3 {
+    font-size: 13px;
+    text-align: center;
+    margin: 6px 0;
+}
+input.text {
     width: 90%;
-    padding: 5px;
-    font-size: 14px;
-    border: 1px solid gray;
+    padding: 4px;
+    font-size: 13px;
+    border: 1px solid #808080;
 }
-input[type="button"], button {
-    padding: 6px 10px;
+input.btn {
+    padding: 5px 8px;
     font-size: 12px;
-    border: 1px solid gray;
+    border: 1px solid #808080;
     background: #e0e0e0;
     margin: 2px;
 }
 .video-item {
-    border: 1px solid gray;
-    padding: 8px;
+    border: 1px solid #808080;
+    padding: 6px;
     margin: 5px 0;
     background: #f0f0f0;
 }
 .video-name {
     font-weight: bold;
+    font-size: 12px;
     margin-bottom: 3px;
+    word-wrap: break-word;
 }
 .video-size {
-    color: #666;
-    margin-bottom: 5px;
+    color: #666666;
+    font-size: 11px;
+    margin-bottom: 4px;
 }
-hr {
-    border: 0;
-    border-top: 1px solid gray;
-    margin: 10px 0;
+.link-raw {
+    font-size: 10px;
+    color: #0000cc;
+    word-wrap: break-word;
 }
+.center { text-align: center; }
 .loading {
     text-align: center;
-    color: #666;
+    color: #666666;
     font-style: italic;
+    padding: 10px;
 }
 .error {
     text-align: center;
-    color: red;
+    color: #cc0000;
     font-weight: bold;
+    padding: 10px;
 }
+hr {
+    border: 0;
+    border-top: 1px solid #808080;
+    margin: 8px 0;
+}
+small { font-size: 10px; color: #666666; }
 </style>
 </head>
 <body>
 
 <h2>TAI VIDEO XUONG</h2>
 
-<center>
-<input type="text" id="searchInput" placeholder="Tim video..." size="30">
+<div class="center">
+<input type="text" id="searchInput" class="text" size="20">
 <br><br>
-<input type="button" value="Tim kiem" onclick="searchVideos()">
-<input type="button" value="Tat ca" onclick="loadVideos()">
-</center>
+<input type="button" class="btn" value="Tim kiem" onclick="searchVideos();">
+<input type="button" class="btn" value="Tat ca" onclick="loadVideos();">
+</div>
 
 <hr>
 
@@ -76,138 +95,242 @@ hr {
 </div>
 
 <hr>
-<center><small>GitHub Pages - Tu dong load video</small></center>
+<div class="center"><small>GitHub Pages - Tu dong load video</small></div>
 
-<script>
-// Biến lưu danh sách video
+<script type="text/javascript">
+/* ============================================================
+   CAU HINH - SUA O DAY
+   ============================================================ */
+var REPO_USER = 'nam348tnh3gp';
+var REPO_NAME = 'Videofor3gp';
+var REPO_BRANCH = 'main';   // co the la 'master' neu repo cu
+var VIDEO_FOLDER = 'videos';
+
+/* ============================================================
+   Bien luu danh sach video
+   ============================================================ */
 var allVideos = [];
 
-// Hàm load video từ GitHub
-async function loadVideos() {
-    document.getElementById('videoList').innerHTML = '<div class="loading">Dang tai danh sach video...</div>';
-    
+/* ============================================================
+   Ham tien ich
+   ============================================================ */
+function getExt(name) {
+    var i = name.lastIndexOf('.');
+    if (i < 0) return '';
+    return name.substring(i + 1).toLowerCase();
+}
+
+function inArray(arr, val) {
+    var i;
+    for (i = 0; i < arr.length; i++) {
+        if (arr[i] === val) return true;
+    }
+    return false;
+}
+
+function formatSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+}
+
+/* ============================================================
+   Lay JSON bang XMLHttpRequest (tuong thich Opera Mini 4.1)
+   ============================================================ */
+function getJSON(url, onSuccess, onError) {
+    var xhr = null;
     try {
-        // REPOSITORY: nam348tnh3gp/Videofor3gp
-        const repoPath = 'nam348tnh3gp/Videofor3gp';
-        const apiUrl = `https://api.github.com/repos/${repoPath}/contents/videos`;
-        console.log('API URL:', apiUrl);
-        
-        const response = await fetch(apiUrl);
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const files = await response.json();
-        
-        allVideos = [];
-        
-        // Lọc file video
-        if (Array.isArray(files)) {
-            files.forEach(file => {
-                if (file.type === 'file') {
-                    const ext = file.name.split('.').pop().toLowerCase();
-                    const videoExts = ['mp4', 'avi', 'mkv', 'mov', '3gp', 'flv', 'webm'];
-                    
-                    if (videoExts.includes(ext)) {
-                        const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
-                        allVideos.push({
-                            name: file.name,
-                            file: file.name,
-                            size: sizeMB + ' MB',
-                            download_url: file.download_url
-                        });
-                    }
-                }
-            });
-        }
-        
-        if (allVideos.length === 0) {
-            document.getElementById('videoList').innerHTML = 
-                '<div class="error">Khong co video nao trong thu muc "videos"</div>';
+        xhr = new XMLHttpRequest();
+    } catch (e) {
+        try {
+            xhr = new ActiveXObject("Microsoft.XMLHTTP");
+        } catch (e2) {
+            onError("Khong ho tro XMLHttpRequest");
             return;
         }
-        
-        displayVideos(allVideos);
-        
-    } catch (error) {
-        console.error('Loi khi tai video:', error);
-        let errorMessage = 'Loi khi tai danh sach video. ';
-        
-        if (error.message.includes('404')) {
-            errorMessage += 'Khong tim thay thu muc videos. Kiem tra lai ten thu muc.';
-        } else if (error.message.includes('403')) {
-            errorMessage += 'Bi chan truy cap. Thu lai sau.';
-        } else {
-            errorMessage += error.message;
-        }
-        
-        document.getElementById('videoList').innerHTML = 
-            '<div class="error">' + errorMessage + '</div>';
+    }
+
+    try {
+        xhr.open("GET", url, true);
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4) {
+                if (xhr.status === 200 || xhr.status === 0) {
+                    var data = null;
+                    try {
+                        data = eval("(" + xhr.responseText + ")");
+                    } catch (e) {
+                        onError("Loi JSON: " + e.message);
+                        return;
+                    }
+                    onSuccess(data);
+                } else {
+                    onError("HTTP " + xhr.status);
+                }
+            }
+        };
+        xhr.send(null);
+    } catch (e) {
+        onError("Loi ket noi: " + e.message);
     }
 }
 
-// Hiển thị danh sách video
-function displayVideos(videos) {
-    var html = '<center><h3>Danh sach video (' + videos.length + '):</h3></center>';
-    
-    videos.forEach(video => {
-        html += '<div class="video-item">';
-        html += '<div class="video-name">' + video.name + '</div>';
-        html += '<div class="video-size">Kich thuoc: ' + video.size + '</div>';
-        html += '<center><a href="' + video.download_url + '" download><button>Tai xuong</button></a></center>';
-        html += '</div>';
+/* ============================================================
+   Tao link raw de TAI TRUC TIEP (quan trong cho Opera Mini)
+   ============================================================ */
+function makeRawUrl(fileName) {
+    return 'https://raw.githubusercontent.com/' +
+           REPO_USER + '/' + REPO_NAME + '/' +
+           REPO_BRANCH + '/' + VIDEO_FOLDER + '/' +
+           encodeURIComponent(fileName);
+}
+
+/* ============================================================
+   Load danh sach video tu GitHub API
+   ============================================================ */
+function loadVideos() {
+    document.getElementById('videoList').innerHTML =
+        '<div class="loading">Dang tai danh sach video...</div>';
+
+    var apiUrl = 'https://api.github.com/repos/' +
+                 REPO_USER + '/' + REPO_NAME +
+                 '/contents/' + VIDEO_FOLDER +
+                 '?ref=' + REPO_BRANCH;
+
+    getJSON(apiUrl, function (files) {
+        allVideos = [];
+        var videoExts = ['mp4', 'avi', 'mkv', 'mov', '3gp', 'flv', 'webm', 'm4v', 'ts'];
+
+        if (files && files.length) {
+            var i;
+            for (i = 0; i < files.length; i++) {
+                var file = files[i];
+                if (file.type === 'file') {
+                    var ext = getExt(file.name);
+                    if (inArray(videoExts, ext)) {
+                        allVideos[allVideos.length] = {
+                            name: file.name,
+                            size: formatSize(file.size),
+                            raw_url: makeRawUrl(file.name)
+                        };
+                    }
+                }
+            }
+        }
+
+        if (allVideos.length === 0) {
+            document.getElementById('videoList').innerHTML =
+                '<div class="error">Khong co video nao trong thu muc "' +
+                VIDEO_FOLDER + '"</div>';
+            return;
+        }
+
+        displayVideos(allVideos, 'Danh sach video');
+
+    }, function (errMsg) {
+        var errorMessage = 'Loi tai danh sach. ';
+        if (errMsg.indexOf('404') >= 0) {
+            errorMessage += 'Khong thay thu muc "' + VIDEO_FOLDER +
+                            '" hoac sai branch "' + REPO_BRANCH + '".';
+        } else if (errMsg.indexOf('403') >= 0) {
+            errorMessage += 'Bi chan (qua gioi han). Thu lai sau.';
+        } else {
+            errorMessage += errMsg;
+        }
+        document.getElementById('videoList').innerHTML =
+            '<div class="error">' + errorMessage + '</div>';
     });
-    
+}
+
+/* ============================================================
+   Hien thi danh sach video
+   ============================================================ */
+function displayVideos(videos, title) {
+    var html = '<h3>' + title + ' (' + videos.length + ')</h3>';
+    var i;
+    for (i = 0; i < videos.length; i++) {
+        var v = videos[i];
+        html += '<div class="video-item">';
+        html += '<div class="video-name">' + v.name + '</div>';
+        html += '<div class="video-size">Size: ' + v.size + '</div>';
+        html += '<div class="center">';
+        // Link truc tiep - Opera Mini se hoi Save/Open khi bam
+        html += '<a href="' + v.raw_url + '">';
+        html += '<input type="button" class="btn" value="Tai xuong">';
+        html += '</a>';
+        html += '</div>';
+        // Hien link raw de copy thu cong neu can
+        html += '<div class="link-raw">' + v.raw_url + '</div>';
+        html += '</div>';
+    }
     document.getElementById('videoList').innerHTML = html;
 }
 
-// Tìm kiếm video
+/* ============================================================
+   Tim kiem video
+   ============================================================ */
 function searchVideos() {
     if (allVideos.length === 0) {
-        document.getElementById('videoList').innerHTML = 
-            '<div class="error">Chua co danh sach video. Bam "Tat ca" de tai.</div>';
+        document.getElementById('videoList').innerHTML =
+            '<div class="error">Chua co danh sach. Bam "Tat ca" de tai.</div>';
         return;
     }
-    
-    var searchText = document.getElementById('searchInput').value.toLowerCase();
-    
+
+    var searchText = document.getElementById('searchInput').value;
+    searchText = (searchText || '').toLowerCase();
+
     if (searchText === '') {
-        displayVideos(allVideos);
+        displayVideos(allVideos, 'Danh sach video');
         return;
     }
-    
-    var filteredVideos = allVideos.filter(video => 
-        video.name.toLowerCase().includes(searchText)
-    );
-    
+
+    var filteredVideos = [];
+    var i;
+    for (i = 0; i < allVideos.length; i++) {
+        if (allVideos[i].name.toLowerCase().indexOf(searchText) >= 0) {
+            filteredVideos[filteredVideos.length] = allVideos[i];
+        }
+    }
+
     if (filteredVideos.length === 0) {
-        document.getElementById('videoList').innerHTML = '<center><p>Khong tim thay video nao</p></center>';
+        document.getElementById('videoList').innerHTML =
+            '<div class="center">Khong tim thay video nao</div>';
         return;
     }
-    
-    var html = '<center><h3>Ket qua tim kiem (' + filteredVideos.length + '):</h3></center>';
-    
-    filteredVideos.forEach(video => {
-        html += '<div class="video-item">';
-        html += '<div class="video-name">' + video.name + '</div>';
-        html += '<div class="video-size">Kich thuoc: ' + video.size + '</div>';
-        html += '<center><a href="' + video.download_url + '" download><button>Tai xuong</button></a></center>';
-        html += '</div>';
-    });
-    
-    document.getElementById('videoList').innerHTML = html;
+
+    displayVideos(filteredVideos, 'Ket qua tim kiem');
 }
 
-// Cho phép tìm kiếm bằng phím Enter
-document.getElementById('searchInput').addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') {
+/* ============================================================
+   Nhan Enter trong o tim kiem
+   ============================================================ */
+function onSearchKey(evt) {
+    evt = evt || window.event;
+    var key = evt.keyCode || evt.which;
+    if (key === 13) {
         searchVideos();
+        return false;
     }
-});
+    return true;
+}
 
-// Tự động load video khi trang được mở
-window.onload = loadVideos;
+/* ============================================================
+   Khoi tao
+   ============================================================ */
+function init() {
+    var inp = document.getElementById('searchInput');
+    if (inp) {
+        inp.onkeypress = onSearchKey;
+    }
+    loadVideos();
+}
+
+if (window.addEventListener) {
+    window.addEventListener('load', init, false);
+} else if (window.attachEvent) {
+    window.attachEvent('onload', init);
+} else {
+    window.onload = init;
+}
 </script>
 </body>
 </html>
